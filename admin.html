@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>管理者ページ - 1対1投票サイト</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Hiragino Sans', 'Yu Gothic', 'Meiryo', sans-serif;
+            background: #404040;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            padding: 40px;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 2.5rem;
+            font-weight: 700;
+            text-align: center;
+        }
+
+        .login-section {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .password-input {
+            padding: 12px 20px;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            font-size: 1rem;
+            margin-right: 10px;
+            width: 250px;
+            font-family: inherit;
+        }
+
+        .login-btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: background 0.3s ease;
+            font-family: inherit;
+        }
+
+        .login-btn:hover {
+            background: #0056b3;
+        }
+
+        .admin-content {
+            display: none;
+        }
+
+        .admin-content.show {
+            display: block;
+        }
+
+        .section {
+            margin-bottom: 40px;
+            padding: 25px;
+            background: #f8f9fa;
+            border-radius: 15px;
+        }
+
+        .section h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+        }
+
+        .ip-display {
+            background: #e9ecef;
+            padding: 15px;
+            border-radius: 10px;
+            font-family: monospace;
+            font-size: 1.1rem;
+            color: #495057;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-family: inherit;
+            resize: vertical;
+        }
+
+        .form-group textarea {
+            min-height: 80px;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #007bff;
+            box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+        }
+
+        .update-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: background 0.3s ease;
+            font-family: inherit;
+        }
+
+        .update-btn:hover {
+            background: #218838;
+        }
+
+        .logout-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            float: right;
+            font-family: inherit;
+            transition: background 0.3s ease;
+        }
+
+        .logout-btn:hover {
+            background: #c82333;
+        }
+
+        .status-message {
+            padding: 12px;
+            border-radius: 8px;
+            margin-top: 15px;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        .status-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .voting-options {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-top: 20px;
+        }
+
+        .option-editor {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            border: 2px solid #e9ecef;
+        }
+
+        .option-editor h3 {
+            color: #007bff;
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+
+            h1 {
+                font-size: 2rem;
+            }
+
+            .password-input {
+                width: 200px;
+                margin-bottom: 10px;
+            }
+
+            .voting-options {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+
+            .logout-btn {
+                float: none;
+                margin-top: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔐 管理者ページ</h1>
+
+        <div class="login-section" id="loginSection">
+            <p style="margin-bottom: 20px; color: #666;">パスワードを入力してください：</p>
+            <input type="password" id="passwordInput" class="password-input" placeholder="パスワード">
+            <button class="login-btn" onclick="login()">ログイン</button>
+            <div id="loginError" style="color: #dc3545; margin-top: 10px; display: none;">パスワードが正しくありません</div>
+        </div>
+
+        <div class="admin-content" id="adminContent">
+            <button class="logout-btn" onclick="logout()">ログアウト</button>
+            
+            <div class="section">
+                <h2>📍 IPアドレス情報</h2>
+                <div class="ip-display" id="ipDisplay">管理者IPアドレスを取得中...</div>
+                <p style="color: #666; font-size: 0.9rem; text-align: center; margin-bottom: 20px;">
+                    管理者の現在のIPアドレス
+                </p>
+                
+                <h3 style="color: #333; margin-bottom: 15px;">📊 投票者IPアドレス一覧</h3>
+                <div id="voterIPs" style="background: #e9ecef; padding: 15px; border-radius: 10px; font-family: monospace; font-size: 0.9rem; min-height: 100px; max-height: 200px; overflow-y: auto;">
+                    投票者のIPアドレスがここに表示されます
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>⚙️ 投票フレーム設定</h2>
+                
+                <div class="form-group">
+                    <label for="pageTitle">ページタイトル：</label>
+                    <input type="text" id="pageTitle" value="🗳️ 1対1投票">
+                </div>
+
+                <div class="form-group">
+                    <label for="pageSubtitle">サブタイトル：</label>
+                    <input type="text" id="pageSubtitle" value="どちらか一方を選んでください">
+                </div>
+
+                <div class="voting-options">
+                    <div class="option-editor">
+                        <h3>選択肢A</h3>
+                        <div class="form-group">
+                            <label for="option1Title">名前：</label>
+                            <input type="text" id="option1Title" value="選択肢A">
+                        </div>
+                        <div class="form-group">
+                            <label for="option1Description">説明：</label>
+                            <textarea id="option1Description">最初のオプションの説明がここに入ります。詳細な情報を提供してください。</textarea>
+                        </div>
+                    </div>
+
+                    <div class="option-editor">
+                        <h3>選択肢B</h3>
+                        <div class="form-group">
+                            <label for="option2Title">名前：</label>
+                            <input type="text" id="option2Title" value="選択肢B">
+                        </div>
+                        <div class="form-group">
+                            <label for="option2Description">説明：</label>
+                            <textarea id="option2Description">二番目のオプションの説明がここに入ります。詳細な情報を提供してください。</textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <button class="update-btn" onclick="updateVotingFrame()">設定を更新</button>
+                
+                <div id="statusMessage" class="status-message" style="display: none;"></div>
+            </div>
+
+            <div class="section">
+                <h2>💬 投票者コメント</h2>
+                <div id="commentsSection" style="background: #e9ecef; padding: 15px; border-radius: 10px; min-height: 100px; max-height: 300px; overflow-y: auto;">
+                    コメントがまだありません
+                </div>
+                <button class="update-btn" onclick="loadVoterComments()" style="margin-top: 15px;">コメントを更新</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const ADMIN_PASSWORD = "admin123";
+        let isLoggedIn = false;
+
+        function login() {
+            const password = document.getElementById('passwordInput').value;
+            const errorDiv = document.getElementById('loginError');
+            
+            if (password === ADMIN_PASSWORD) {
+                isLoggedIn = true;
+                document.getElementById('loginSection').style.display = 'none';
+                document.getElementById('adminContent').classList.add('show');
+                errorDiv.style.display = 'none';
+                loadCurrentSettings();
+                getIPAddress();
+                loadVoterIPs();
+                loadVoterComments();
+            } else {
+                errorDiv.style.display = 'block';
+                document.getElementById('passwordInput').value = '';
+            }
+        }
+
+        function logout() {
+            isLoggedIn = false;
+            document.getElementById('loginSection').style.display = 'block';
+            document.getElementById('adminContent').classList.remove('show');
+            document.getElementById('passwordInput').value = '';
+        }
+
+        function loadCurrentSettings() {
+            const savedSettings = localStorage.getItem('votingFrameSettings');
+            if (savedSettings) {
+                const settings = JSON.parse(savedSettings);
+                document.getElementById('pageTitle').value = settings.pageTitle || '🗳️ 1対1投票';
+                document.getElementById('pageSubtitle').value = settings.pageSubtitle || 'どちらか一方を選んでください';
+                document.getElementById('option1Title').value = settings.option1Title || '選択肢A';
+                document.getElementById('option1Description').value = settings.option1Description || '最初のオプションの説明がここに入ります。詳細な情報を提供してください。';
+                document.getElementById('option2Title').value = settings.option2Title || '選択肢B';
+                document.getElementById('option2Description').value = settings.option2Description || '二番目のオプションの説明がここに入ります。詳細な情報を提供してください。';
+            }
+        }
+
+        function updateVotingFrame() {
+            const settings = {
+                pageTitle: document.getElementById('pageTitle').value,
+                pageSubtitle: document.getElementById('pageSubtitle').value,
+                option1Title: document.getElementById('option1Title').value,
+                option1Description: document.getElementById('option1Description').value,
+                option2Title: document.getElementById('option2Title').value,
+                option2Description: document.getElementById('option2Description').value
+            };
+
+            localStorage.setItem('votingFrameSettings', JSON.stringify(settings));
+            showStatusMessage('設定が正常に更新されました！', 'success');
+
+            // メインページを更新するため、設定をセッションストレージにも保存
+            sessionStorage.setItem('votingFrameSettings', JSON.stringify(settings));
+        }
+
+        function showStatusMessage(message, type) {
+            const statusDiv = document.getElementById('statusMessage');
+            statusDiv.textContent = message;
+            statusDiv.className = `status-message status-${type}`;
+            statusDiv.style.display = 'block';
+
+            setTimeout(() => {
+                statusDiv.style.display = 'none';
+            }, 3000);
+        }
+
+        async function getIPAddress() {
+            try {
+                // 複数のIPアドレス取得サービスを試す
+                const services = [
+                    'https://api.ipify.org?format=json',
+                    'https://httpbin.org/ip',
+                    'https://api.myip.com'
+                ];
+
+                let ipAddress = null;
+                
+                for (const service of services) {
+                    try {
+                        const response = await fetch(service);
+                        const data = await response.json();
+                        
+                        if (service.includes('ipify')) {
+                            ipAddress = data.ip;
+                        } else if (service.includes('httpbin')) {
+                            ipAddress = data.origin;
+                        } else if (service.includes('myip')) {
+                            ipAddress = data.ip;
+                        }
+                        
+                        if (ipAddress) break;
+                    } catch (e) {
+                        continue;
+                    }
+                }
+
+                const ipDisplay = document.getElementById('ipDisplay');
+                if (ipAddress) {
+                    ipDisplay.textContent = `管理者IPアドレス: ${ipAddress}`;
+                } else {
+                    ipDisplay.textContent = '管理者IPアドレスを取得できませんでした';
+                }
+            } catch (error) {
+                console.error('IP取得エラー:', error);
+                document.getElementById('ipDisplay').textContent = '管理者IPアドレスを取得できませんでした';
+            }
+        }
+
+        function loadVoterIPs() {
+            const voterIPs = JSON.parse(localStorage.getItem('voterIPs') || '[]');
+            const voterIPsDiv = document.getElementById('voterIPs');
+            
+            if (voterIPs.length === 0) {
+                voterIPsDiv.textContent = 'まだ投票者はいません';
+            } else {
+                const ipList = voterIPs.map((entry, index) => {
+                    const date = new Date(entry.timestamp).toLocaleString('ja-JP');
+                    const choice = entry.choice === 1 ? '選択肢A' : '選択肢B';
+                    return `${index + 1}. ${entry.ip} - ${choice} (${date})`;
+                }).join('\n');
+                voterIPsDiv.textContent = ipList;
+            }
+        }
+
+        function loadVoterComments() {
+            const comments = JSON.parse(localStorage.getItem('voterComments') || '[]');
+            const commentsSection = document.getElementById('commentsSection');
+            
+            if (comments.length === 0) {
+                commentsSection.innerHTML = '<div style="color: #666; font-style: italic;">コメントがまだありません</div>';
+            } else {
+                const commentsList = comments.map((comment, index) => {
+                    const date = new Date(comment.timestamp).toLocaleString('ja-JP');
+                    return `<div style="margin-bottom: 15px; padding: 12px; background: white; border-radius: 8px; border-left: 4px solid #007bff;">
+                        <div style="font-size: 0.9rem; color: #666; margin-bottom: 5px;">
+                            ${index + 1}. ${comment.ip} - ${date}
+                        </div>
+                        <div style="color: #333; line-height: 1.5;">
+                            ${comment.text.replace(/</g, '&lt;').replace(/>/g, '&gt;')}
+                        </div>
+                    </div>`;
+                }).reverse().join(''); // 新しいコメントを上に表示
+                commentsSection.innerHTML = commentsList;
+            }
+        }
+
+        // エンターキーでログイン
+        document.getElementById('passwordInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                login();
+            }
+        });
+
+        // ページロード時の処理
+        window.onload = function() {
+            // セキュリティのため、ログイン状態をリセット
+            logout();
+        };
+    </script>
+</body>
+</html>

@@ -1,1 +1,505 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>1対1投票サイト</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
+        body {
+            font-family: 'Hiragino Sans', 'Yu Gothic', 'Meiryo', sans-serif;
+            background: #404040;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            padding: 40px;
+            max-width: 800px;
+            width: 100%;
+            text-align: center;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2.5rem;
+            font-weight: 700;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 40px;
+            font-size: 1.1rem;
+        }
+
+        .voting-section {
+            margin-bottom: 40px;
+        }
+
+        .options-container {
+            display: flex;
+            gap: 30px;
+            justify-content: center;
+            margin: 30px 0;
+            flex-wrap: wrap;
+        }
+
+        .option {
+            flex: 1;
+            min-width: 200px;
+            max-width: 300px;
+            background: #f8f9fa;
+            border: 3px solid #e9ecef;
+            border-radius: 15px;
+            padding: 30px 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .option:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        .option.voted {
+            border-color: #28a745;
+            background: #d4edda;
+            transform: scale(1.05);
+        }
+
+        .option h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1.5rem;
+        }
+
+        .option .description {
+            color: #666;
+            margin-bottom: 20px;
+            line-height: 1.6;
+        }
+
+        .vote-btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: background 0.3s ease;
+            font-family: inherit;
+        }
+
+        .vote-btn:hover {
+            background: #0056b3;
+        }
+
+        .vote-btn:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+
+        .results {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            display: none;
+        }
+
+        .results.show {
+            display: block;
+        }
+
+        .result-bar {
+            margin: 15px 0;
+            background: #e9ecef;
+            border-radius: 10px;
+            overflow: hidden;
+            height: 40px;
+            position: relative;
+        }
+
+        .result-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #28a745, #20c997);
+            border-radius: 10px;
+            transition: width 1s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+        }
+
+        .result-label {
+            position: absolute;
+            left: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #333;
+            font-weight: 600;
+            z-index: 2;
+        }
+
+        .reset-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 10px 25px;
+            border-radius: 20px;
+            cursor: pointer;
+            margin-top: 20px;
+            font-family: inherit;
+            transition: background 0.3s ease;
+        }
+
+        .reset-btn:hover {
+            background: #c82333;
+        }
+
+        .admin-btn {
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 15px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-family: inherit;
+            transition: background 0.3s ease;
+        }
+
+        .admin-btn:hover {
+            background: #545b62;
+        }
+
+        .total-votes {
+            color: #666;
+            margin-top: 15px;
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px;
+            }
+
+            h1 {
+                font-size: 2rem;
+            }
+
+            .options-container {
+                flex-direction: column;
+                gap: 20px;
+            }
+
+            .option {
+                min-width: auto;
+                max-width: none;
+            }
+        }
+
+        .confetti {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background: #ff6b6b;
+            animation: confetti-fall 3s linear forwards;
+        }
+
+        @keyframes confetti-fall {
+            0% {
+                transform: translateY(-100vh) rotate(0deg);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(100vh) rotate(720deg);
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🗳️ 1対1投票</h1>
+        <p class="subtitle">どちらか一方を選んでください</p>
+
+        <div class="voting-section">
+            <div class="options-container">
+                <div class="option" id="option1">
+                    <h3>選択肢A</h3>
+                    <p class="description">最初のオプションの説明がここに入ります。詳細な情報を提供してください。</p>
+                    <button class="vote-btn" onclick="vote(1)">投票する</button>
+                </div>
+
+                <div class="option" id="option2">
+                    <h3>選択肢B</h3>
+                    <p class="description">二番目のオプションの説明がここに入ります。詳細な情報を提供してください。</p>
+                    <button class="vote-btn" onclick="vote(2)">投票する</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="results" id="results">
+            <h3>投票結果</h3>
+            <div class="result-bar">
+                <div class="result-label">選択肢A</div>
+                <div class="result-fill" id="result1" style="width: 0%;">0票</div>
+            </div>
+            <div class="result-bar">
+                <div class="result-label">選択肢B</div>
+                <div class="result-fill" id="result2" style="width: 0%;">0票</div>
+            </div>
+            <p class="total-votes" id="totalVotes">総投票数: 0票</p>
+            <button class="reset-btn" onclick="resetVotes()">投票をリセット</button>
+        </div>
+        
+        <div class="comment-section" style="margin-top: 30px; background: #f8f9fa; padding: 20px; border-radius: 10px;">
+            <h3 style="color: #333; margin-bottom: 15px;">💬 コメント</h3>
+            <div style="margin-bottom: 15px;">
+                <textarea id="commentInput" placeholder="コメントを入力してください..." style="width: 100%; padding: 12px; border: 2px solid #e9ecef; border-radius: 8px; font-family: inherit; resize: vertical; min-height: 80px;"></textarea>
+            </div>
+            <button onclick="addComment()" style="background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-family: inherit; font-weight: 600; transition: background 0.3s ease;">コメントを投稿</button>
+            <div id="commentsDisplay" style="margin-top: 20px;">
+                <div style="color: #666; font-style: italic;">コメントはまだありません</div>
+            </div>
+        </div>
+        
+        <div class="admin-access" style="text-align: center; margin-top: 20px;">
+            <button class="admin-btn" onclick="window.location.href='admin.html'">管理者画面</button>
+        </div>
+    </div>
+
+    <script>
+        let votes = {
+            option1: parseInt(localStorage.getItem('votes_option1')) || 0,
+            option2: parseInt(localStorage.getItem('votes_option2')) || 0
+        };
+
+        let hasVoted = localStorage.getItem('hasVoted') === 'true';
+
+        async function getVoterIP() {
+            try {
+                const services = [
+                    'https://api.ipify.org?format=json',
+                    'https://httpbin.org/ip',
+                    'https://api.myip.com'
+                ];
+
+                for (const service of services) {
+                    try {
+                        const response = await fetch(service);
+                        const data = await response.json();
+                        
+                        if (service.includes('ipify')) {
+                            return data.ip;
+                        } else if (service.includes('httpbin')) {
+                            return data.origin;
+                        } else if (service.includes('myip')) {
+                            return data.ip;
+                        }
+                    } catch (e) {
+                        continue;
+                    }
+                }
+                return 'Unknown IP';
+            } catch (error) {
+                return 'Unknown IP';
+            }
+        }
+
+        async function vote(option) {
+            if (hasVoted) {
+                alert('既に投票済みです！');
+                return;
+            }
+
+            const optionKey = `option${option}`;
+            votes[optionKey]++;
+            
+            localStorage.setItem(`votes_${optionKey}`, votes[optionKey]);
+            localStorage.setItem('hasVoted', 'true');
+            hasVoted = true;
+
+            // 投票者IPを記録
+            const voterIP = await getVoterIP();
+            const voterIPs = JSON.parse(localStorage.getItem('voterIPs') || '[]');
+            voterIPs.push({
+                ip: voterIP,
+                choice: option,
+                timestamp: new Date().getTime()
+            });
+            localStorage.setItem('voterIPs', JSON.stringify(voterIPs));
+
+            document.getElementById(`option${option}`).classList.add('voted');
+            
+            const buttons = document.querySelectorAll('.vote-btn');
+            buttons.forEach(btn => btn.disabled = true);
+
+            createConfetti();
+            
+            setTimeout(() => {
+                updateResults();
+                document.getElementById('results').classList.add('show');
+            }, 500);
+        }
+
+        function updateResults() {
+            const total = votes.option1 + votes.option2;
+            const percentage1 = total > 0 ? Math.round((votes.option1 / total) * 100) : 0;
+            const percentage2 = total > 0 ? Math.round((votes.option2 / total) * 100) : 0;
+
+            document.getElementById('result1').style.width = percentage1 + '%';
+            document.getElementById('result1').textContent = votes.option1 + '票';
+            
+            document.getElementById('result2').style.width = percentage2 + '%';
+            document.getElementById('result2').textContent = votes.option2 + '票';
+
+            document.getElementById('totalVotes').textContent = `総投票数: ${total}票`;
+            
+            // 動的な選択肢名を結果に反映
+            const savedSettings = localStorage.getItem('votingFrameSettings') || sessionStorage.getItem('votingFrameSettings');
+            if (savedSettings) {
+                const settings = JSON.parse(savedSettings);
+                document.querySelectorAll('.result-label')[0].textContent = settings.option1Title || '選択肢A';
+                document.querySelectorAll('.result-label')[1].textContent = settings.option2Title || '選択肢B';
+            }
+        }
+
+        function resetVotes() {
+            if (confirm('投票結果をリセットしますか？この操作は取り消せません。')) {
+                votes.option1 = 0;
+                votes.option2 = 0;
+                hasVoted = false;
+
+                localStorage.removeItem('votes_option1');
+                localStorage.removeItem('votes_option2');
+                localStorage.removeItem('hasVoted');
+
+                document.getElementById('option1').classList.remove('voted');
+                document.getElementById('option2').classList.remove('voted');
+                
+                const buttons = document.querySelectorAll('.vote-btn');
+                buttons.forEach(btn => btn.disabled = false);
+
+                document.getElementById('results').classList.remove('show');
+            }
+        }
+
+        function createConfetti() {
+            for (let i = 0; i < 50; i++) {
+                setTimeout(() => {
+                    const confetti = document.createElement('div');
+                    confetti.className = 'confetti';
+                    confetti.style.left = Math.random() * 100 + 'vw';
+                    confetti.style.backgroundColor = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#feca57'][Math.floor(Math.random() * 5)];
+                    confetti.style.animationDelay = Math.random() * 3 + 's';
+                    document.body.appendChild(confetti);
+                    
+                    setTimeout(() => {
+                        confetti.remove();
+                    }, 6000);
+                }, i * 50);
+            }
+        }
+
+        function loadVotingFrameSettings() {
+            const savedSettings = localStorage.getItem('votingFrameSettings') || sessionStorage.getItem('votingFrameSettings');
+            if (savedSettings) {
+                const settings = JSON.parse(savedSettings);
+                
+                // ページタイトルとサブタイトルを更新
+                document.querySelector('h1').textContent = settings.pageTitle || '🗳️ 1対1投票';
+                document.querySelector('.subtitle').textContent = settings.pageSubtitle || 'どちらか一方を選んでください';
+                
+                // 選択肢Aを更新
+                const option1 = document.getElementById('option1');
+                option1.querySelector('h3').textContent = settings.option1Title || '選択肢A';
+                option1.querySelector('.description').textContent = settings.option1Description || '最初のオプションの説明がここに入ります。詳細な情報を提供してください。';
+                
+                // 選択肢Bを更新
+                const option2 = document.getElementById('option2');
+                option2.querySelector('h3').textContent = settings.option2Title || '選択肢B';
+                option2.querySelector('.description').textContent = settings.option2Description || '二番目のオプションの説明がここに入ります。詳細な情報を提供してください。';
+                
+                // 結果表示の名前も更新
+                document.querySelectorAll('.result-label')[0].textContent = settings.option1Title || '選択肢A';
+                document.querySelectorAll('.result-label')[1].textContent = settings.option2Title || '選択肢B';
+            }
+        }
+
+        async function addComment() {
+            const commentInput = document.getElementById('commentInput');
+            const commentText = commentInput.value.trim();
+            
+            if (!commentText) {
+                alert('コメントを入力してください');
+                return;
+            }
+
+            const voterIP = await getVoterIP();
+            const comments = JSON.parse(localStorage.getItem('voterComments') || '[]');
+            
+            const newComment = {
+                text: commentText,
+                ip: voterIP,
+                timestamp: new Date().getTime(),
+                id: Date.now() + Math.random()
+            };
+            
+            comments.push(newComment);
+            localStorage.setItem('voterComments', JSON.stringify(comments));
+            
+            commentInput.value = '';
+            alert('コメントを投稿しました！');
+            
+            // コメントは管理者にのみ表示されるため、ここでは表示を更新しない
+        }
+
+        function loadComments() {
+            // この機能は管理者画面でのみ実装
+            // 一般ユーザーはコメントを見ることができない
+            const commentsDisplay = document.getElementById('commentsDisplay');
+            commentsDisplay.innerHTML = '<div style="color: #666; font-style: italic;">コメントは管理者のみ閲覧可能です</div>';
+        }
+
+        window.onload = function() {
+            // 投票フレーム設定を読み込み
+            loadVotingFrameSettings();
+            loadComments();
+            
+            if (hasVoted) {
+                const buttons = document.querySelectorAll('.vote-btn');
+                buttons.forEach(btn => btn.disabled = true);
+                
+                if (votes.option1 > 0) {
+                    document.getElementById('option1').classList.add('voted');
+                }
+                if (votes.option2 > 0) {
+                    document.getElementById('option2').classList.add('voted');
+                }
+                
+                updateResults();
+                document.getElementById('results').classList.add('show');
+            }
+        };
+    </script>
+</body>
+</html>
